@@ -56,12 +56,7 @@ class ListenThread:
                 conn, addr = sock.accept()
                 self._socket_c.get_clients().append(conn)
                 
-                if(len(self._socket_c.get_clients()) == self._socket_c.get_game().get_players()):
-                    self._socket_c.get_game().set_wait(False)
-                    print(F"Antes: {self._socket_c.get_game()._wait}")
-                else:
-                    print(F"Depois: {self._socket_c.get_game()._wait}")
-                    self._socket_c.get_game().set_wait(True)
+                self._socket_c.update_state()
 
                 player_id = len(self._socket_c.get_threads())
                 keepalive_client = KeepAliveThread(conn, addr, player_id, self._socket_c)
@@ -70,7 +65,7 @@ class ListenThread:
                 thread.start()
 
                 self._socket_c.get_threads().append(keepalive_client)
-                self._socket_c.ping(conn, player_id, self._socket_c.get_game()._wait)
+                self._socket_c.ping_all()
 
             sock.close()
 
@@ -95,9 +90,6 @@ class SocketController:
 
     def set_game_match(self, game_match):
         self._game_match = game_match
-    
-    def get_game(self):
-        return self._game_match
 
     def get_host(self):
         return self._host
@@ -105,11 +97,11 @@ class SocketController:
     def get_port(self):
         return self._server_port
 
-    def get_clients(self):
-        return self._client_connections
-
     def get_threads(self):
         return self._client_thread
+    
+    def get_clients(self):
+        return self._client_connections
     
 
     def stop_connection(self):
@@ -137,12 +129,16 @@ class SocketController:
     def ping_all_except(self, player_id):
         for index, conn in enumerate(self._client_connections):
             if index != player_id:
-                self.ping(conn, index, self._socket_c.get_game()._wait)
+                self.ping(conn, index, self._game_match._wait)
 
     def alert_all(self):
         msg = F"END_GAME::= " + self._game_match.winners()
         for conn in self._client_connections:
             conn.sendall(str.encode(msg))
+
+    def ping_all(self):
+        for index, conn in enumerate(self._client_connections):
+            self.ping(conn, index, self._game_match._wait)
 
     def ping(self, conn, player_id, wait):
         actual_player_id = self._game_match.get_actual_player()
@@ -176,7 +172,7 @@ class SocketController:
             if should_next:
                 self._game_match.next_player()
 
-            self.ping(conn, player_id, self._socket_c.get_game()._wait)
+            self.ping(conn, player_id, self._game_match._wait)
             if not should_next:
                 self.ping_all_except(player_id)
 
@@ -187,6 +183,12 @@ class SocketController:
             if should_next:
                 self.ping_all_except(player_id)
         else:
-            self.ping(conn, player_id, self._socket_c.get_game()._wait)
+            self.ping(conn, player_id, self._game_match._wait)
+
+    def update_state(self):
+        if(len(self._client_connections) == self._game_match.get_players()):
+            self._game_match.set_wait(False)
+        else:
+            self._game_match.set_wait(True)
         
 

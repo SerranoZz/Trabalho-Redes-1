@@ -48,22 +48,22 @@ def keepalive(connection):
         msg = res_msgs[1]
 
         if status == "YOUR_TURN":
-            #clean_terminal()
+            clean_terminal()
             message = input(msg)
             while not read_coords(msg, message):
                 message = input("Especifique uma peca: ")
             connection.send(str.encode(message))
         elif status == "RESPONSE" or status == "NOT_YOUR_TURN":
-            #clean_terminal()
+            clean_terminal()
             print(msg)
         elif status == "END_GAME" or status == "SERVER_CLOSED":
-            #clean_terminal()
+            clean_terminal()
             print(msg)
             print("Até mais!")
             break
         elif status == "WAITING_PLAYERS":
+            clean_terminal()
             print(msg)
-            
 
 
 if __name__ == "__main__":
