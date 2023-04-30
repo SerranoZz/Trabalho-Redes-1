@@ -159,8 +159,7 @@ class SocketController:
                 msg += self._game_match.pieces_result(player_id)
                 msg += f"Turno do jogador {actual_player_id + 1}"
         else:
-            msg = "WAITING_PLAYERS::= "
-            msg += "Aguardando Jogadores..."
+            msg = "WAITING_PLAYERS::= Aguardando Jogadores..."
 
         conn.sendall(str.encode(msg))
 
