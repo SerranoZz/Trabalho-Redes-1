@@ -7,10 +7,7 @@ width = 240 + 720
 height = 50 + 720 
 window = pygame.display.set_mode((width, height))
 pygame.display.set_caption('Jogo da Memória')
-#screen = pygame.display.get_surface()
 font = pygame.font.SysFont("Monospace", 20)
-
-#pygame.display.flip()
 
 running = True
 background_color = (0, 35, 0)
@@ -25,8 +22,10 @@ start_color = (20, 105, 100)
 button_color = (46,139,87)
 red = (200, 0, 0)
 dark_red = (150, 0, 0)
+
+#por enquanto calculando a dimensão das cartas por aqui, mas dps a gnt muda
 step = 10
-dim = 4
+dim = 10
 n_jogadores = 10
 size = (720 - step * dim)/dim
 
@@ -138,7 +137,17 @@ class Button:
                 self.active = False
             self.current_color =  self.active_color if self.active else self.color
             self.txt_surface = font.render(self.text, True, background_color)  if not self.active else font.render(self.text, True, white)
-    
+
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if self.rect.collidepoint(event.pos):
+                if self.text == 'Start':
+                    screen_manager.change_screen(1)
+                elif self.text == 'Recomeçar':
+                    pass
+                elif self.text == 'Fechar':
+                    pygame.quit()
+                    exit()
+
     def draw(self, window):
         pygame.draw.rect(window, self.current_color, self.rect, border_radius= 10)
         window.blit(self.txt_surface, (self.rect.x + self.rect.width/2 - self.txt_surface.get_width()/2, self.rect.y + self.rect.height/2 - self.txt_surface.get_height()/2))
@@ -180,7 +189,7 @@ class InputBox:
     def draw(self, window):
         label = font.render(self.label, 1, player_score_color) if not self.active else font.render(self.label, 1, self.active_color)
         window.blit(label, ((self.rect.x + self.rect.width/2 - label.get_width()/2, self.rect.y - 25)))
-        pygame.draw.rect(width, self.color, self.rect, 2, border_radius= 10)
+        pygame.draw.rect(window, self.color, self.rect, 2, border_radius= 10)
         window.blit(self.txt_surface, (self.rect.x + 10 , self.rect.y + self.txt_surface.get_height()/2))
 
 class FinalMessage:
@@ -211,14 +220,10 @@ class Game:
         self.dim = dim
         self.players_number = players_number
         self.window = window
-        self.cards = []
-        self.players = []
+        self.cards = [Card(j, i) for i in range(self.dim) for j in range(self.dim)]
+        self.players = [Player(i, i+1, 0) for i in range(self.players_number)]
         self.message = Message(self.window, 'Vez do fulaninho')
         self.score_board = ScoreBoard(self.window, self.players)
-
-    def initialize_players(self):
-        for i in range(self.players_number):
-            self.players.append(Player(i, i+1, 0))
     
     def initialize_score_board(self):
         self.score_board = ScoreBoard(window, self.players)
@@ -227,16 +232,11 @@ class Game:
         for card in self.cards:
             card.handle_event(event)
 
-    def initialize_cards(self):
-        for i in range(self.dim):
-            for j in range(self.dim):
-                self.cards.append(Card(j, i))
-
     def clean_screen(self):
         for card in self.cards:
             card.set_flip(False)
 
-    def redraw_window(self):
+    def draw(self):
         window.fill(background_color)
 
         for card in self.cards:
@@ -246,24 +246,66 @@ class Game:
         self.message.draw(self.window)
         pygame.display.update()
 
-# ic = pygame.image.load('./assets/ic.png')
-# ic = pygame.transform.smoothscale(ic, (3*ic.get_width()/4, 3*ic.get_height()/4))
-# ip = InputBox(3*window.get_width()/8 - 200/2, 5*window.get_height()/8 - 50/2, 200, 50, 'IP')
-# port = InputBox(5*window.get_width()/8 - 200/2, 5*window.get_height()/8 - 50/2, 200, 50, 'Porta')
-# start = Button(window.get_width()/2 - 100/2, 6*window.get_height()/8 - 50/2, 100, 50, 'Start', button_color, ic_color)
+class ScreenManager:
+    def __init__(self, window):
+        self.window = window
+        self.screens = [MenuScreen(self.window), Game(self.window, 10, 10)]
+        self.current_screen = self.screens[0]
 
-def main():
-    running = True
-    game = Game(window, 4, 10)
-    game.initialize_players()
-    game.initialize_cards()
+    def change_screen(self, index):
+        self.current_screen = self.screens[index]
+    
+    def run(self):
+        while True:
+            events = pygame.event.get()
+            for event in events:
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+            
+                if self.current_screen is not None:
+                    self.current_screen.handle_event(event)
+                    self.current_screen.draw()
+            
+            pygame.display.update()
 
-    while running:
-        game.redraw_window()
-        for event in pygame.event.get():   
-            if event.type == pygame.QUIT:
-                running = False
+class MenuScreen:
+    def __init__(self, window):
+        self.window = window
+        self.image = pygame.image.load('./assets/ic.png')
+        self.image = pygame.transform.smoothscale(self.image, (3*self.image.get_width()/4, 3*self.image.get_height()/4))
+        self.ip_input = InputBox(3*window.get_width()/8 - 200/2, 5*window.get_height()/8 - 50/2, 200, 50, 'IP')
+        self.port_input = InputBox(5*window.get_width()/8 - 200/2, 5*window.get_height()/8 - 50/2, 200, 50, 'Porta')
+        self.start_button = Button(window.get_width()/2 - 100/2, 6*window.get_height()/8 - 50/2, 100, 50, 'Start', button_color, ic_color)
+
+    def handle_event(self, event):
+        self.start_button.handle_event(event)
+        self.port_input.handle_event(event)
+        self.ip_input.handle_event(event)
+                    
+    def draw(self):
+        self.window.fill(white)
+        self.window.blit(self.image, (self.window.get_width()/2 - self.image.get_width()/2, 0))
+        self.ip_input.draw(window)
+        self.port_input.draw(window)
+        self.start_button.draw(window)
+
         
-            game.handle_event(event)
+screen_manager = ScreenManager(window) 
+screen_manager.run()
 
-main()
+# def main():
+#     running = True
+#     game = Game(window, 4, 10)
+#     game.initialize_players()
+#     game.initialize_cards()
+
+#     while running:
+#         game.redraw_window()
+#         for event in pygame.event.get():   
+#             if event.type == pygame.QUIT:
+#                 running = False
+        
+#             game.handle_event(event)
+
+#main()
