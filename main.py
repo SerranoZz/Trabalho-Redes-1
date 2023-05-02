@@ -25,7 +25,7 @@ dark_red = (150, 0, 0)
 
 #por enquanto calculando a dimensão das cartas por aqui, mas dps a gnt muda
 step = 10
-dim = 10
+dim = 8
 n_jogadores = 10
 size = (720 - step * dim)/dim
 
@@ -39,7 +39,9 @@ class Card:
     def __init__(self, x, y):
         global step, size
         self._flipped = False
-        self._image = pygame.image.load('./assets/flipped/c2.png') if self._flipped else  pygame.image.load('./assets/cartinha.png')
+        self._row = y
+        self._column = x
+        self._image = pygame.image.load('./assets/flipped/c2.png') if self._flipped else pygame.image.load('./assets/cartinha.png')
         self._image = pygame.transform.smoothscale(self._image, (size, size))
         self.margem = (720 - dim*self._image.get_width())/2
         self._x = 240  + self.margem + x * (self._image.get_width())
@@ -50,10 +52,13 @@ class Card:
         return (x >= self._x + 17 and x < self._x + self._image.get_width() - 17 and y < self._image.get_height() + self._y and y > self._y)
         
     def handle_event(self, event):
-        if event.type == pygame.MOUSEBUTTONUP:
+        if event.type == pygame.MOUSEBUTTONDOWN:
             pos = pygame.mouse.get_pos()
             if self.collided(pos[0], pos[1]):
                 self.set_flip(True)
+                print(f'carta clicada -> ({self._row}, {self._column})')
+            self._image = pygame.image.load('./assets/flipped/c2.png') if self._flipped else pygame.image.load('./assets/cartinha.png')
+            self._image = pygame.transform.smoothscale(self._image, (size, size))
 
     def draw(self, window):
         window.blit(self._image, (self._x, self._y))
@@ -220,10 +225,11 @@ class Game:
         self.dim = dim
         self.players_number = players_number
         self.window = window
-        self.cards = [Card(j, i) for i in range(self.dim) for j in range(self.dim)]
+        self.cards = [Card(i, j) for i in range(self.dim) for j in range(self.dim)]
         self.players = [Player(i, i+1, 0) for i in range(self.players_number)]
         self.message = Message(self.window, 'Vez do fulaninho')
         self.score_board = ScoreBoard(self.window, self.players)
+        #self.final_message = FinalMessage(window, 'Você ganhou!!')
     
     def initialize_score_board(self):
         self.score_board = ScoreBoard(window, self.players)
@@ -231,6 +237,8 @@ class Game:
     def handle_event(self, event):
         for card in self.cards:
             card.handle_event(event)
+        
+        #self.final_message.handle_event(event)
 
     def clean_screen(self):
         for card in self.cards:
@@ -238,18 +246,18 @@ class Game:
 
     def draw(self):
         window.fill(background_color)
-
         for card in self.cards:
             card.draw(self.window)
 
         self.score_board.draw(self.window)
         self.message.draw(self.window)
+        #self.final_message.draw(self.window)
         pygame.display.update()
 
 class ScreenManager:
     def __init__(self, window):
         self.window = window
-        self.screens = [MenuScreen(self.window), Game(self.window, 10, 10)]
+        self.screens = [MenuScreen(self.window), Game(self.window, 8, 10)]
         self.current_screen = self.screens[0]
 
     def change_screen(self, index):
