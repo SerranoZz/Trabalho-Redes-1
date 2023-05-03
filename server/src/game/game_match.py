@@ -45,34 +45,20 @@ class GameMatch:
                     rand_index = randint(0, max_pos - 1)
                     r_i, r_j = available_positions.pop(rand_index)
 
-                    self._table[r_i][r_j] = -i
+                    self._table[r_i][r_j] = i
 
-    def table_str(self):
-        result = "     "
+    def get_table_str(self):
+        table = ''
         for i in range(self._table_size):
-            result += "{0:2d} ".format(i)
-        result += "\n-----"
-        for i in range(self._table_size):
-            result += "---"
-        result += "\n"
-
-        for i in range(self._table_size):
-            result += "{0:2d} | ".format(i)
             for j in range(self._table_size):
-                if self._table[i][j] == "-":
-                    result += " - "
-                elif self._table[i][j] >= 0:
-                    result += "{0:2d} ".format(self._table[i][j])
-                else:
-                    result += " ? "
-            result += "\n"
-        return result
-
-    def score_board_str(self):
-        result = "Placar:\n---------------------\n"
+                table += f'{self._table[i][j]} ' 
+        return table
+    
+    def get_score_board_str(self):
+        score_board = ''
         for i in range(self._players):
-            result += "Jogador {0}: {1:2d}\n".format(i + 1, self._score_board[i])
-        return result
+            score_board += f'{i + 1}:{self._score_board[i]} '
+        return score_board
 
     def choose_pieces(self):
         if self._check:

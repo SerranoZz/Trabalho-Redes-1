@@ -145,21 +145,22 @@ class SocketController:
 
         if(not wait):
             if player_id == actual_player_id:
+                print(self._game_match.get_table_str())
                 msg = f"YOUR_TURN::= "
-                msg += self._game_match.table_str()
-                msg += self._game_match.score_board_str()
-                msg += self._game_match.choose_pieces()
-                msg += self._game_match.pieces_result(player_id)
+                msg += f'{self._game_match.get_table_str()} |'
+                msg += f'{self._game_match.get_score_board_str()} /'
+                msg += f'{self._game_match.choose_pieces()} '
+                msg += f'{self._game_match.pieces_result(player_id)} '
                 msg += "Seu turno, por favor, especifique uma peça: "
             else:
                 msg = "NOT_YOUR_TURN::= "
-                msg += self._game_match.table_str()
-                msg += self._game_match.score_board_str()
-                msg += self._game_match.choose_pieces()
-                msg += self._game_match.pieces_result(player_id)
+                msg += f'{self._game_match.get_table_str()} |'
+                msg += f'{self._game_match.get_score_board_str()} /'
+                msg += f'{self._game_match.choose_pieces()} '
+                msg += f'{self._game_match.pieces_result(player_id)} '
                 msg += f"Turno do jogador {actual_player_id + 1}"
         else:
-            msg = "WAITING_PLAYERS::= Aguardando Jogadores..."
+            msg = "WAITING_PLAYERS::= /Aguardando Jogadores..."
 
         conn.sendall(str.encode(msg))
 

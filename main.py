@@ -30,7 +30,7 @@ n_jogadores = 10
 size = (720 - step * dim)/dim
 
 host = "127.0.0.1"
-port_a = 8096
+port = 8096
 
 cards_not_flipped = []
 cards_flipped = []
@@ -227,8 +227,9 @@ class Game:
         self.window = window
         self.cards = [Card(i, j) for i in range(self.dim) for j in range(self.dim)]
         self.players = [Player(i, i+1, 0) for i in range(self.players_number)]
-        self.message = Message(self.window, 'Vez do fulaninho')
+        self.message = Message(self.window, '')
         self.score_board = ScoreBoard(self.window, self.players)
+        #self.label, self.table, self.score_map, self.choose_pieces, self.pieces_results = map()
         #self.final_message = FinalMessage(window, 'Você ganhou!!')
     
     def initialize_score_board(self):
@@ -244,6 +245,41 @@ class Game:
         for card in self.cards:
             card.set_flip(False)
 
+    def keep_alive(self, connection):
+        ready_sockets, _, _ = select.select([connection], [], [], 1)
+        if not ready_sockets:
+            return
+
+        res = connection.recv(2024)
+        res_message = res.decode("utf-8")
+        res_msgs = res_message.split("::= ")
+
+        status = res_msgs[0]
+        msg = res_msgs[1]
+
+        print(res_msgs)
+
+        if status == "YOUR_TURN":
+            # self.clean_screen()
+            # message = input(msg)
+            # while not read_coords(msg, message):
+            #     message = input("Especifique uma peca: ")
+            # connection.send(str.encode(message))
+            self.message.update_text(msg.split('/')[1])
+            pass
+        elif status == "RESPONSE" or status == "NOT_YOUR_TURN":
+            self.clean_screen()
+            self.message.update_text(msg.split('/')[1])
+            print(msg.split('/')[0].split('|')[1])
+        elif status == "END_GAME" or status == "SERVER_CLOSED":
+            self.clean_screen()
+            self.message.update_text(msg.split('/')[1])
+            return
+        elif status == "WAITING_PLAYERS":
+            self.clean_screen()
+            self.message.update_text(msg.split('/')[1])
+
+
     def draw(self):
         window.fill(background_color)
         for card in self.cards:
@@ -252,7 +288,6 @@ class Game:
         self.score_board.draw(self.window)
         self.message.draw(self.window)
         #self.final_message.draw(self.window)
-        pygame.display.update()
 
 class ScreenManager:
     def __init__(self, window):
@@ -271,10 +306,11 @@ class ScreenManager:
                     pygame.quit()
                     exit()
             
-                if self.current_screen is not None:
-                    self.current_screen.handle_event(event)
-                    self.current_screen.draw()
-            
+                self.current_screen.handle_event(event)
+                if self.current_screen == self.screens[1]:
+                    self.current_screen.keep_alive(client)
+                self.current_screen.draw()
+
             pygame.display.update()
 
 class MenuScreen:
@@ -298,9 +334,13 @@ class MenuScreen:
         self.port_input.draw(window)
         self.start_button.draw(window)
 
-        
+client = socket.socket()
+client.connect((host, port))
+
 screen_manager = ScreenManager(window) 
 screen_manager.run()
+
+
 
 # def main():
 #     running = True
