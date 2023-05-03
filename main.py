@@ -25,10 +25,6 @@ dark_red = (150, 0, 0)
 
 #por enquanto calculando a dimensão das cartas por aqui, mas dps a gnt muda
 step = 10
-dim = 8
-n_jogadores = 10
-size = (720 - step * dim)/dim
-
 host = "127.0.0.1"
 port = 8096
 
@@ -36,20 +32,22 @@ cards_not_flipped = []
 cards_flipped = []
 
 class Card:
-    def __init__(self, x, y):
-        global step, size
+    def __init__(self, x0, y, dim, step):
         self._flipped = False
         self._row = y
-        self._column = x
+        self._column = x0
         self._image = pygame.image.load('./assets/flipped/c2.png') if self._flipped else pygame.image.load('./assets/cartinha.png')
-        self._image = pygame.transform.smoothscale(self._image, (size, size))
-        self.margem = (720 - dim*self._image.get_width())/2
-        self._x = 240  + self.margem + x * (self._image.get_width())
-        self._y = 50 + y * (self._image.get_height()  + step)
+        self.size = (720 - step * dim)/dim
+        self._image = pygame.transform.smoothscale(self._image, (self.size, self.size))
+        self.margem = (720 - dim*self.size)/2
+        self.x = 240  + self.margem + x0 * (self.size)
+        self.y = 50 + y * (self.size  + step)
+        print('x constutor', self.x)
+        print('y constutor', self.y)
         self._value = -1
     
     def collided(self, x, y):
-        return (x >= self._x + 17 and x < self._x + self._image.get_width() - 17 and y < self._image.get_height() + self._y and y > self._y)
+        return (x >= self.x + 17 and x < self.x + self._image.get_width() - 17 and y < self._image.get_height() + self.y and y > self.y)
         
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -57,23 +55,35 @@ class Card:
             if self.collided(pos[0], pos[1]):
                 self.set_flip(True)
                 print(f'carta clicada -> ({self._row}, {self._column})')
+                print('valor da carta ->', self._value)
             self._image = pygame.image.load('./assets/flipped/c2.png') if self._flipped else pygame.image.load('./assets/cartinha.png')
-            self._image = pygame.transform.smoothscale(self._image, (size, size))
+            self._image = pygame.transform.smoothscale(self._image, (self.size, self.size))
+
+    def update_value(self, value):
+        self._value = value
 
     def draw(self, window):
-        window.blit(self._image, (self._x, self._y))
+        global step
+        if self._value != -1:
+            print('x desenho', self.x)
+            print('y desenho', self.y)
+            window.blit(self._image, (int(self.x), int(self.y)))
 
     def set_flip(self, value):
         self._flipped = value
 
 class ScoreBoard:
-    def __init__(self, window, players):
+    def __init__(self, window):
         self.x = 0
         self.y = 0
+
         self.width = 240
         self.height = window.get_height()
         self.header_color = score_board_header_color
         self.color = score_board_color
+        self.players = None
+    
+    def update_players(self, players):
         self.players = players
     
     def draw(self, window):
@@ -82,8 +92,9 @@ class ScoreBoard:
         text = font.render('PLACAR', 1, white)
         window.blit(text, (self.x + self.width/2 - text.get_width()/2, self.y + 50/2 - text.get_height()/2))
         
-        for player in self.players:
-            player.draw(window)
+        if self.players != None:
+            for player in self.players:
+                player.draw(window)
 
 class Player:
     def __init__(self, y, player_id, points):
@@ -198,7 +209,7 @@ class InputBox:
         window.blit(self.txt_surface, (self.rect.x + 10 , self.rect.y + self.txt_surface.get_height()/2))
 
 class FinalMessage:
-    def __init__(self, window, text):
+    def __init__(self, text):
         self.width = 400
         self.height = 200
         self.x = 240 + 720/2 - self.width/2
@@ -221,15 +232,14 @@ class FinalMessage:
         self.close.handle_event(event)
 
 class Game:
-    def __init__(self, window, dim, players_number):
-        self.dim = dim
-        self.players_number = players_number
+    def __init__(self, window):
+        self.dim = -1
+        self.players_number = -1
         self.window = window
-        self.cards = [Card(i, j) for i in range(self.dim) for j in range(self.dim)]
-        self.players = [Player(i, i+1, 0) for i in range(self.players_number)]
+        self.cards = []
+        self.players = []
         self.message = Message(self.window, '')
-        self.score_board = ScoreBoard(self.window, self.players)
-        #self.label, self.table, self.score_map, self.choose_pieces, self.pieces_results = map()
+        self.score_board = ScoreBoard(self.window)
         #self.final_message = FinalMessage(window, 'Você ganhou!!')
     
     def initialize_score_board(self):
@@ -245,6 +255,62 @@ class Game:
         for card in self.cards:
             card.set_flip(False)
 
+    #atualizando o valor das cartas
+    def update_cards(self, message):
+        table = list(message.split('|')[0].split(' '))
+        print(table)
+        for i in range(self.dim):
+            self.cards[i].update_value(int(table[i]))
+    
+    def update_players_score(self, message):
+        score_map = message.split('/')[0].split('|')[1]
+        list_score_map = score_map.split(' ')
+        
+        for i in range(self.players_number - 1):
+            index = int(list_score_map[i].split(':')[0])
+            points = int(list_score_map[i].split(':')[1])
+        
+            self.players[index].update_score(points)
+
+    def initialize_game(self, message):
+        self.dim = int(message.split('|')[1])
+        self.players_number = int(message.split('|')[0])
+        self.cards = []
+        for i in range(self.dim):
+            for j in range(self.dim):
+                self.cards.append(Card(i, j, self.dim, step))
+        self.players = [Player(i, i+1, 0) for i in range(self.players_number)]
+        self.score_board.update_players(self.players)
+
+    def handle_messages(self, status, msg):
+        if status == "YOUR_TURN":
+            # self.clean_screen()
+            # message = input(msg)
+                # while not read_coords(msg, message):
+            #     message = input("Especifique uma peca: ")
+            # connection.send(str.encode(message))
+            self.message.update_text(msg.split('/')[1])
+            self.update_cards(msg)
+            self.update_players_score(msg)
+            pass
+        elif status == "RESPONSE" or status == "NOT_YOUR_TURN":
+            #self.clean_screen()
+            self.message.update_text(msg.split('/')[1])
+            self.update_cards(msg)
+            self.update_players_score(msg)
+            print(msg.split('/')[0].split('|')[1])
+        elif status == "END_GAME" or status == "SERVER_CLOSED":
+            #self.clean_screen()
+            self.message.update_text(msg.split('/')[1])
+            self.update_cards(msg)
+            self.update_players_score(msg)
+            return
+        elif status == "SETUP":
+            self.initialize_game(msg)
+        elif status == "WAITING_PLAYERS":
+            #self.clean_screen()
+            self.message.update_text(msg.split('/')[1])
+
     def keep_alive(self, connection):
         ready_sockets, _, _ = select.select([connection], [], [], 1)
         if not ready_sockets:
@@ -252,33 +318,21 @@ class Game:
 
         res = connection.recv(2024)
         res_message = res.decode("utf-8")
-        res_msgs = res_message.split("::= ")
+        messages = res_message.split('msg')
+        print(messages)
 
-        status = res_msgs[0]
-        msg = res_msgs[1]
-
-        print(res_msgs)
-
-        if status == "YOUR_TURN":
-            # self.clean_screen()
-            # message = input(msg)
-            # while not read_coords(msg, message):
-            #     message = input("Especifique uma peca: ")
-            # connection.send(str.encode(message))
-            self.message.update_text(msg.split('/')[1])
-            pass
-        elif status == "RESPONSE" or status == "NOT_YOUR_TURN":
-            self.clean_screen()
-            self.message.update_text(msg.split('/')[1])
-            print(msg.split('/')[0].split('|')[1])
-        elif status == "END_GAME" or status == "SERVER_CLOSED":
-            self.clean_screen()
-            self.message.update_text(msg.split('/')[1])
-            return
-        elif status == "WAITING_PLAYERS":
-            self.clean_screen()
-            self.message.update_text(msg.split('/')[1])
-
+        for i in range(len(messages)):
+            if messages[i] == '':
+                continue
+            res_msgs = messages[i].split("::= ")
+            print(res_msgs)
+            status = res_msgs[0]
+            print(status)
+            msg = res_msgs[1]
+            print(msg)
+            self.handle_messages(status, msg)
+            print(res_msgs)
+            print(msg)
 
     def draw(self):
         window.fill(background_color)
@@ -292,14 +346,21 @@ class Game:
 class ScreenManager:
     def __init__(self, window):
         self.window = window
-        self.screens = [MenuScreen(self.window), Game(self.window, 8, 10)]
+        self.screens = [MenuScreen(self.window), Game(self.window)]
         self.current_screen = self.screens[0]
 
     def change_screen(self, index):
         self.current_screen = self.screens[index]
-    
+
     def run(self):
+        time0 = pygame.time.get_ticks()
+
         while True:
+            time1 = pygame.time.get_ticks()
+
+            if (time1 - time0 < 100/6):
+                continue
+
             events = pygame.event.get()
             for event in events:
                 if event.type == pygame.QUIT:
@@ -311,6 +372,8 @@ class ScreenManager:
                     self.current_screen.keep_alive(client)
                 self.current_screen.draw()
 
+            time0 = time1
+            
             pygame.display.update()
 
 class MenuScreen:
@@ -339,21 +402,3 @@ client.connect((host, port))
 
 screen_manager = ScreenManager(window) 
 screen_manager.run()
-
-
-
-# def main():
-#     running = True
-#     game = Game(window, 4, 10)
-#     game.initialize_players()
-#     game.initialize_cards()
-
-#     while running:
-#         game.redraw_window()
-#         for event in pygame.event.get():   
-#             if event.type == pygame.QUIT:
-#                 running = False
-        
-#             game.handle_event(event)
-
-#main()

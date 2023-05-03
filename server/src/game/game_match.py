@@ -15,7 +15,7 @@ class GameMatch:
         self._temp_player_id = 0
         self._index = 0
         self._check = False
-        self._wait = True
+        self._status = 0 #0 esperando | 1 pronto | 2 ultimo
 
     def set_players(self, players):
         self._players = players
@@ -29,8 +29,8 @@ class GameMatch:
             for _ in range(self._table_size)
         ]
 
-    def set_wait(self, value):
-        self._wait = value
+    def set_status(self, value):
+        self._status = value
 
     def new_table(self):
         available_positions = []
