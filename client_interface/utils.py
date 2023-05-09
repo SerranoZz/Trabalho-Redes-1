@@ -8,6 +8,7 @@ WIDTH = 240 + 720
 HEIGHT = 50 + 720 
 WINDOW = pygame.display.set_mode((WIDTH, HEIGHT))
 FONT_SIZE = 20
+TIME = 1500
 FONT = pygame.font.SysFont("Monospace", FONT_SIZE, bold=1)
 BACKGROUND_COLOR = (0, 35, 0)
 PLAYER_SCORE_COLOR = (12, 79, 9)

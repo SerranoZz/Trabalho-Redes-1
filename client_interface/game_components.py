@@ -47,8 +47,9 @@ class Message:
         self.color = MESSAGORE_COLOR
         self.font = FONT
     
-    def update_text(self, text):
-        self.text = text
+    def update_text(self, msg):
+        message = msg.split('/')[1]
+        self.text = message
 
     def draw(self, window):
         pygame.draw.rect(window, self.color, (self.x, self.y, self.width, self.height))
@@ -165,7 +166,8 @@ class FinalMessage:
     def update_text(self, text):
         self.text = text
 
-    def handle_event(self, event):
+    def handle_event(self):
         print('passei no handle event da mensagem final')
-        self.restart.handle_event(event)
-        self.close.handle_event(event)
+        for event in pygame.event.get():
+            self.restart.handle_event(event)
+            self.close.handle_event(event)

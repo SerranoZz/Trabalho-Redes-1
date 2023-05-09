@@ -18,6 +18,7 @@ class Game:
         self.score_board = ScoreBoard(self.window)
         self.message = Message(self.window, '')
         self.final_message = FinalMessage('', self)
+        self.waiting = False
 
     def initialize_score_board(self):
         self.score_board = ScoreBoard(self.window, self.players)
@@ -74,9 +75,9 @@ class Game:
             self.message.update_text('Jogada não computada. Clique na carta fechada!')
             self.message.draw(self.window)
             pygame.display.update()
+            self.waiting = True
             pygame.time.wait(1500)
             self.message.update_text(real_message)
-            return
          
     def update_cards(self, message):
         table = list(message.split('|')[0].split(' '))
@@ -102,7 +103,10 @@ class Game:
     def handle_messages(self, status, msg, connection):
         if status == "YOUR_TURN":
             self.update_cards(msg)
-            self.message.update_text(msg.split('/')[1])
+            if not self.waiting:
+                self.message.update_text(msg)
+            else:
+                self.waiting = False
             self.message.draw(self.window)
             self.update_players_score(msg)
             self.score_board.draw(self.window)
@@ -112,24 +116,20 @@ class Game:
             connection.send(str.encode(coord))
 
         elif status == "RESPONSE" or status == "NOT_YOUR_TURN":
-            self.message.update_text(msg.split('/')[1])
+            self.message.update_text(msg)
             self.update_cards(msg)
             self.update_players_score(msg)
 
         elif status == "END_GAME" or status == "SERVER_CLOSED":
-            print('aqui a mensagem final', msg)
             self.message.update_text('')
             self.final_message.update_text(msg)
-            
-            for event in pygame.event.get():
-                self.final_message.close.handle_event(event)
-                self.final_message.restart.handle_event(event)
+            self.final_message.handle_event()
         
         elif status == "SETUP":
             self.initialize_game(msg, 10)
 
         elif status == "WAITING_PLAYERS":
-            self.message.update_text(msg.split('/')[1])
+            self.message.update_text(msg)
         
 
     def keep_alive(self):
