@@ -142,13 +142,11 @@ class SocketController:
             self.ping(conn, index, self._game_match._status)
 
     def ping(self, conn, player_id, status):
-        print(status)
         actual_player_id = self._game_match.get_actual_player()
 
         msg = 'msg'
         if(status == 2):
             if player_id == actual_player_id:
-                print(self._game_match.get_table_str())
                 msg += f"YOUR_TURN::= "
                 msg += f'{self._game_match.get_table_str()}|'
                 msg += f'{self._game_match.get_score_board_str()} /'
@@ -177,6 +175,7 @@ class SocketController:
 
         if status == Status.VALID_MESSAGE:
             should_next = self._game_match.should_next()
+
             if should_next:
                 self._game_match.next_player()
 
@@ -190,7 +189,9 @@ class SocketController:
 
             if should_next:
                 self.ping_all_except(player_id)
+
         else:
+            print(message.split(' '))
             self.ping(conn, player_id, self._game_match._status)
 
     def update_state(self):

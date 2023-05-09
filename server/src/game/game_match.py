@@ -15,7 +15,7 @@ class GameMatch:
         self._temp_player_id = 0
         self._index = 0
         self._check = False
-        self._status = 0 #0 esperando | 1 pronto | 2 ultimo
+        self._status = 0 #0 esperando jogadores | 1 pronto | 2 ultimo
 
     def set_players(self, players):
         self._players = players
@@ -45,7 +45,7 @@ class GameMatch:
                     rand_index = randint(0, max_pos - 1)
                     r_i, r_j = available_positions.pop(rand_index)
 
-                    self._table[r_i][r_j] = i
+                    self._table[r_i][r_j] = -i
 
     def get_table_str(self):
         table = ''
@@ -117,7 +117,6 @@ class GameMatch:
             result = "Houve um empate entre os jogadores "
             for i in winners:
                 result += str(i + 1) + " "
-            result += "\n"
         else:
             result = "O jogador {0} foi o vencedor!\n".format(winners[0] + 1)
 

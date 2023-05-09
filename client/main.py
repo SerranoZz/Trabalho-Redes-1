@@ -44,6 +44,8 @@ def keepalive(connection):
         res_message = res.decode("utf-8")
         res_msgs = res_message.split("::= ")
 
+        print(res_message)
+
         status = res_msgs[0]
         msg = res_msgs[1]
 
