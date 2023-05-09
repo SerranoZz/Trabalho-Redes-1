@@ -80,7 +80,6 @@ class SocketController:
         self._client_connections = []
         self._client_thread: list[KeepAliveThread] = []
         self._host = "127.0.0.1"
-        self._ready = False
 
     def set_server_port(self, server_port):
         self._server_port = server_port
@@ -130,7 +129,7 @@ class SocketController:
     def ping_all_except(self, player_id):
         for index, conn in enumerate(self._client_connections):
             if index != player_id:
-                self.ping(conn, index, self._game_match._status)
+                self.ping(conn, index, self._game_match._wait)
 
     def alert_all(self):
         msg = F"END_GAME::= " + self._game_match.winners()
@@ -139,69 +138,61 @@ class SocketController:
 
     def ping_all(self):
         for index, conn in enumerate(self._client_connections):
-            self.ping(conn, index, self._game_match._status)
+            self.ping(conn, index, self._game_match._wait)
 
-    def ping(self, conn, player_id, status):
+    def ping(self, conn, player_id, wait):
         actual_player_id = self._game_match.get_actual_player()
 
-        msg = 'msg'
-        if(status == 2):
+        if(not wait):
             if player_id == actual_player_id:
-                msg += f"YOUR_TURN::= "
-                msg += f'{self._game_match.get_table_str()}|'
-                msg += f'{self._game_match.get_score_board_str()} /'
-                msg += f'{self._game_match.choose_pieces()} '
-                msg += f'{self._game_match.pieces_result(player_id)} '
+                msg = f"YOUR_TURN::= "
+                msg += self._game_match.table_str()
+                msg += self._game_match.score_board_str()
+                msg += self._game_match.choose_pieces()
+                msg += self._game_match.pieces_result(player_id)
                 msg += "Seu turno, por favor, especifique uma peça: "
+            
             else:
-                msg += "NOT_YOUR_TURN::= "
-                msg += f'{self._game_match.get_table_str()}|'
-                msg += f'{self._game_match.get_score_board_str()} /'
-                msg += f'{self._game_match.choose_pieces()} '
-                msg += f'{self._game_match.pieces_result(player_id)} '
+                msg = "NOT_YOUR_TURN::= "
+                msg += self._game_match.table_str()
+                msg += self._game_match.score_board_str()
+                msg += self._game_match.choose_pieces()
+                msg += self._game_match.pieces_result(player_id)
                 msg += f"Turno do jogador {actual_player_id + 1}"
-        elif(status == 0):
-            msg += "WAITING_PLAYERS::= /Aguardando Jogadores..."
         else:
-            msg += f'SETUP::= {self._game_match._players}|{self._game_match._table_size}'
+            msg = "WAITING_PLAYERS::= "
+            msg += "Aguardando Jogadores..."
 
         conn.sendall(str.encode(msg))
-
-        if status == 1:
-            self.ping(conn, player_id, 2)
 
     def decode_message(self, conn, player_id, message):
         status = self._decode.decode_message(player_id, message)
 
         if status == Status.VALID_MESSAGE:
             should_next = self._game_match.should_next()
-
+            
+            if not should_next:
+                self.ping_all_except(player_id)
+            
             if should_next:
                 self._game_match.next_player()
 
-            self.ping(conn, player_id, self._game_match._status)
-            if not should_next:
+            self.ping(conn, player_id, self._game_match._wait)
+            
+            if should_next:
                 self.ping_all_except(player_id)
 
             if self._game_match.is_game_finish():
                 self.alert_all()
                 self.stop_connection()
 
-            if should_next:
-                self.ping_all_except(player_id)
-
         else:
-            print(message.split(' '))
-            self.ping(conn, player_id, self._game_match._status)
+            self.ping(conn, player_id, self._game_match._wait)
 
     def update_state(self):
         if(len(self._client_connections) == self._game_match.get_players()):
-            if not self._ready:
-                self._game_match.set_status(1)
-                self._ready = True
-            else:
-                self._game_match.set_status(2)
+            self._game_match.set_wait(False)
         else:
-            self._game_match.set_status(0)
+            self._game_match.set_wait(True)
         
 
