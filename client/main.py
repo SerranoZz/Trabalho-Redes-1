@@ -44,8 +44,6 @@ def keepalive(connection):
         res_message = res.decode("utf-8")
         res_msgs = res_message.split("::= ")
 
-        print(res_message)
-
         status = res_msgs[0]
         msg = res_msgs[1]
 
@@ -55,6 +53,7 @@ def keepalive(connection):
             while not read_coords(msg, message):
                 message = input("Especifique uma peca: ")
             connection.send(str.encode(message))
+        
         elif status == "RESPONSE" or status == "NOT_YOUR_TURN":
             clean_terminal()
             print(msg)
