@@ -48,7 +48,9 @@ class Message:
         self.font = FONT
     
     def update_text(self, msg):
-        message = msg.split('/')[1]
+        message = msg
+        if len(msg.split('/')) > 1:
+            message = msg.split('/')[1]
         self.text = message
 
     def draw(self, window):
@@ -114,7 +116,7 @@ class Card:
         self.font_color = (0, 0, 0)
         self.card_color = (255, 255, 255)
         self.font = pygame.font.SysFont("Monospace", FONT_SIZE * 4, bold=1)
-        self.image_path = "costas.jpg"
+        self.image_path = './assets/verso_carta.png'
         self.flipped = False
 
     def draw(self, surface):
@@ -142,32 +144,25 @@ class Card:
         self.text = text
 
 class FinalMessage:
-    def __init__(self, text, game):
+    def __init__(self, text):
         self.width = 600
         self.height = 200
         self.x = 240 + 720/2 - self.width/2
         self.y = 50 + 720/2 - self.height/2
-        self.color = PLAYER_SCORE_COLOR
+        self.color = SCORE_BOARD_COLOR
         self.text = text
-        self.color = WHITE
-        self.restart = Button(game, game.manager, self.x + self.width/4 - 150/2, self.y + self.height/2, 150, 50, 'Recomeçar', BUTTON_COLOR, IC_COLOR)
-        self.close = Button(game, game.manager, self.x + 3*self.width/4  - 150/2, self.y + self.height/2, 150, 50, 'Fechar', RED, DARK_RED)
         self.font = FONT
 
     def draw(self, window):
         pygame.draw.rect(window, self.color, (self.x, self.y, self.width, self.height), border_radius=10)
-        text = self.font.render(self.text, True, BACKGROUND_COLOR)
-        window.blit(text, (self.x + self.width/2 - text.get_width()/2, self.y + self.height/4 - text.get_height()/2))
-        self.restart.draw(window)
-        self.close.draw(window)
+        text = self.font.render(self.text, True, WHITE)
+        window.blit(text, (self.x + self.width/2 - text.get_width()/2, self.y + self.height/2 - text.get_height()/2))
         
-        pygame.display.flip()
     
     def update_text(self, text):
-        self.text = text
+        self.text = text.split('\n')[0]
 
     def handle_event(self):
-        print('passei no handle event da mensagem final')
         for event in pygame.event.get():
             self.restart.handle_event(event)
             self.close.handle_event(event)

@@ -17,7 +17,7 @@ class Game:
         self.game_section = GameSection(self.window)
         self.score_board = ScoreBoard(self.window)
         self.message = Message(self.window, '')
-        self.final_message = FinalMessage('', self)
+        self.final_message = FinalMessage('')
         self.waiting = False
 
     def initialize_score_board(self):
@@ -95,7 +95,6 @@ class Game:
         for i in range(self.players_number):
             index = int(list_score_map[i].split(':')[0])
             points = int(list_score_map[i].split(':')[1])
-            print(f'pontos do jogador {index}: {points}')
         
             self.players[index-1].update_score(points)
             self.players[index-1].draw(self.window)
@@ -122,9 +121,14 @@ class Game:
 
         elif status == "END_GAME" or status == "SERVER_CLOSED":
             self.message.update_text('')
+            self.message.draw(self.window)
             self.final_message.update_text(msg)
-            self.final_message.handle_event()
-        
+            self.final_message.draw(self.window)
+            pygame.display.flip()
+            pygame.time.wait(10000)
+            pygame.quit()
+            exit()
+
         elif status == "SETUP":
             self.initialize_game(msg, 10)
 
@@ -140,8 +144,6 @@ class Game:
         res = self.connection.recv(2024)
         res_message = res.decode("utf-8")
         messages = res_message.split('msg')
-
-        print(messages)
 
         for i in range(len(messages)):
             if messages[i] == '':

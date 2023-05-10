@@ -1,8 +1,8 @@
 ## Desenvolvimento
 
-Para começar a desenvolver no projeto, primeiro instale o pplay-pygame.
+Para começar a desenvolver no projeto, primeiro instale o Pygame e o PyQt5.
 
 ```bash
-pip install pplay-pygame
+pip install pygame
 pip install PyQt5
 ```

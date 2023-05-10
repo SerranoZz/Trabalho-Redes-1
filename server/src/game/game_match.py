@@ -15,7 +15,7 @@ class GameMatch:
         self._temp_player_id = 0
         self._index = 0
         self._check = False
-        self._wait = True
+        self._status = 0 #0 esperando jogadores | 1 pronto, deve fazer setup | 2 partida ocorrendo normalmente
 
     def set_players(self, players):
         self._players = players
@@ -29,8 +29,8 @@ class GameMatch:
             for _ in range(self._table_size)
         ]
 
-    def set_wait(self, value):
-        self._wait = value
+    def set_status(self, value):
+        self._status = value
 
     def new_table(self):
         available_positions = []
@@ -47,32 +47,18 @@ class GameMatch:
 
                     self._table[r_i][r_j] = -i
 
-    def table_str(self):
-        result = "     "
+    def get_table_str(self):
+        table = ''
         for i in range(self._table_size):
-            result += "{0:2d} ".format(i)
-        result += "\n-----"
-        for i in range(self._table_size):
-            result += "---"
-        result += "\n"
-
-        for i in range(self._table_size):
-            result += "{0:2d} | ".format(i)
             for j in range(self._table_size):
-                if self._table[i][j] == "-":
-                    result += " - "
-                elif self._table[i][j] >= 0:
-                    result += "{0:2d} ".format(self._table[i][j])
-                else:
-                    result += " ? "
-            result += "\n"
-        return result
-
-    def score_board_str(self):
-        result = "Placar:\n---------------------\n"
+                table += f'{self._table[i][j]} ' 
+        return table
+    
+    def get_score_board_str(self):
+        score_board = ''
         for i in range(self._players):
-            result += "Jogador {0}: {1:2d}\n".format(i + 1, self._score_board[i])
-        return result
+            score_board += f'{i + 1}:{self._score_board[i]} '
+        return score_board
 
     def choose_pieces(self):
         if self._check:
@@ -131,7 +117,6 @@ class GameMatch:
             result = "Houve um empate entre os jogadores "
             for i in winners:
                 result += str(i + 1) + " "
-            result += "\n"
         else:
             result = "O jogador {0} foi o vencedor!\n".format(winners[0] + 1)
 
@@ -158,7 +143,6 @@ class GameMatch:
                 return True
         else:
             return False
-
     def get_actual_player(self):
         return self._actual_player
     

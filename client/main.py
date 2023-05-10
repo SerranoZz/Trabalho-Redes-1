@@ -7,6 +7,9 @@ import time
 host = "127.0.0.1"
 port = int(input("Digite a porta: "))
 
+#construimos a interface grafica com base neste codigo
+#nao ira rodar por aqui porque modificamos a função que manda o tabuleiro, o placar, etc para o cliente
+
 
 def clean_terminal():
     if platform.system() == "Windows":
